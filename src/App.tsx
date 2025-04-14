@@ -28,7 +28,8 @@ function App() {
       setCardData(result);
     } catch (err) {
       console.error("名刺解析エラー:", err);
-      setError("名刺の解析中にエラーが発生しました。もう一度お試しください。");
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(`名刺の解析中にエラーが発生しました: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
@@ -45,14 +46,14 @@ function App() {
     <Container>
       <Flex direction="column" style={{ minHeight: "100vh" }}>
         <Box
-          py="5"
+          py="2"
           style={{
             backgroundColor: "var(--iris-9)",
             color: "white",
             textAlign: "center",
           }}
         >
-          <Heading size="6" mb="1">
+          <Heading size="3" mb="1">
             Scan2Meet
           </Heading>
           <Text size="2" style={{ color: "white" }}>
@@ -63,8 +64,8 @@ function App() {
         <Flex
           direction="column"
           align="center"
-          gap="5"
-          py="6"
+          gap="1"
+          py="2"
           px="4"
           style={{ backgroundColor: "#f5f5f5", flex: 1 }}
         >
