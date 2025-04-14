@@ -11,20 +11,26 @@ import { analyzeBusinessCard } from "./services/gemini";
 
 function App() {
   // 状態管理
-  const [_imageData, setImageData] = useState<string | null>(null);
+  const [imageData, setImageData] = useState<string | null>(null); // プレビュー用
+  // Fileオブジェクトも状態として持つ（省略可能だが、再試行などに使えるかも）
+  // const [imageFile, setImageFile] = useState<File | null>(null);
   const [cardData, setCardData] = useState<BusinessCardData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 画像キャプチャ時の処理
-  const handleCapture = async (capturedImageData: string) => {
-    setImageData(capturedImageData);
+  // 画像キャプチャ時の処理 (Fileオブジェクトも受け取るように変更)
+  const handleCapture = async (
+    capturedImageData: string,
+    capturedImageFile: File
+  ) => {
+    setImageData(capturedImageData); // プレビュー用にBase64も保持
+    // setImageFile(capturedImageFile); // 必要ならFileオブジェクトも保持
     setIsLoading(true);
     setError(null);
 
     try {
-      // Gemini APIで名刺を解析
-      const result = await analyzeBusinessCard(capturedImageData);
+      // Gemini APIで名刺を解析 (Fileオブジェクトを渡す)
+      const result = await analyzeBusinessCard(capturedImageFile);
       setCardData(result);
     } catch (err) {
       console.error("名刺解析エラー:", err);

@@ -2,6 +2,7 @@ import {
   GoogleGenAI,
   createUserContent,
   createPartFromBase64,
+  createPartFromUri, // 追加
 } from "@google/genai";
 
 // APIキーを環境変数から取得
@@ -57,13 +58,30 @@ export const researchCompany = async (companyName: string) => {
   }
 };
 
-// 名刺画像を解析する関数
-export const analyzeBusinessCard = async (imageData: string) => {
+// 名刺画像を解析する関数 (ai.files.upload を使用)
+export const analyzeBusinessCard = async (imageFile: File) => {
   try {
-    // Base64形式の画像データを準備
-    const base64Image = imageData.split(",")[1];
-    const mimeType = "image/jpeg";
+    // 1. 画像ファイルをアップロード
+    console.log(
+      "Uploading business card image...",
+      imageFile.name,
+      imageFile.type
+    );
+    const uploadedFile = await ai.files.upload({
+      file: imageFile,
+    });
+    console.log("Business card image uploaded:", uploadedFile);
 
+    // uploadedFile とそのプロパティの存在を確認
+    if (!uploadedFile?.uri || !uploadedFile?.mimeType) {
+      throw new Error(
+        `Business card image upload failed. Response: ${JSON.stringify(
+          uploadedFile
+        )}`
+      );
+    }
+
+    // 2. プロンプトを定義
     const prompt = `
       この画像は名刺です。名刺から以下の情報を抽出してJSON形式で返してください:
       - 姓（lastName）
@@ -81,16 +99,19 @@ export const analyzeBusinessCard = async (imageData: string) => {
       部署名（department）は、「営業部」「技術部」「マーケティング部」などの部署を指します。
     `;
 
+    // 3. アップロードされた画像のURIを使用してコンテンツ生成
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash",
       contents: [
         createUserContent([
           prompt,
-          createPartFromBase64(base64Image, mimeType),
+          // アップロードされた画像のURIを使用
+          createPartFromUri(uploadedFile.uri, uploadedFile.mimeType),
         ]),
       ],
     });
 
+    // 4. レスポンスからJSONを抽出して解析
     const text = response.text;
 
     // JSONを抽出して解析
