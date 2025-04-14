@@ -7,7 +7,8 @@ import Camera from "./components/Camera";
 import BusinessCardInfo, {
   BusinessCardData,
 } from "./components/BusinessCardInfo";
-import { analyzeBusinessCard } from "./services/gemini";
+// import { analyzeBusinessCard } from "./services/gemini"; // Gemini版はコメントアウトまたは削除
+import { analyzeBusinessCardWithOpenAI } from "./services/openai"; // OpenAI版をインポート
 
 function App() {
   // 状態管理
@@ -29,11 +30,12 @@ function App() {
     setError(null);
 
     try {
-      // Gemini APIで名刺を解析 (Fileオブジェクトを渡す)
-      const result = await analyzeBusinessCard(capturedImageFile);
+      // OpenAI APIで名刺を解析 (Fileオブジェクトを渡す)
+      const result = await analyzeBusinessCardWithOpenAI(capturedImageFile);
       setCardData(result);
     } catch (err) {
-      console.error("名刺解析エラー:", err);
+      // エラーメッセージもOpenAI用に更新した方が良いかもしれない
+      console.error("OpenAI名刺解析エラー:", err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(`名刺の解析中にエラーが発生しました: ${errorMessage}`);
     } finally {

@@ -10,22 +10,6 @@ const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 // Gemini APIクライアントの初期化
 const ai = new GoogleGenAI({ apiKey });
 
-// 画像をBase64に変換する関数
-export const fileToBase64 = async (file: File): Promise<string> => {
-  return new Promise<string>((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.readAsDataURL(file);
-  });
-};
-
-// 画像URLをBase64に変換する関数
-export const imageUrlToBase64 = async (url: string): Promise<string> => {
-  const response = await fetch(url);
-  const blob = await response.blob();
-  return fileToBase64(new File([blob], "image.jpg", { type: "image/jpeg" }));
-};
-
 // 会社名でリサーチする関数
 export const researchCompany = async (companyName: string) => {
   try {
