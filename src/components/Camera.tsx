@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback } from "react";
 import Webcam from "react-webcam";
 import { Box, Flex, Button } from "@radix-ui/themes";
+import { CameraIcon, ImageIcon, RefreshCwIcon } from "lucide-react";
 
 interface CameraProps {
   onCapture: (imageData: string) => void;
@@ -71,15 +72,17 @@ const Camera: React.FC<CameraProps> = ({ onCapture, onReset }) => {
             </div>
           </Box>
           <Flex gap="4" mt="4" justify="center" width="100%">
-            <Button onClick={capture} size="3" highContrast color="green">
+            <Button onClick={capture} size="3" color="iris">
+              <CameraIcon />
               撮影
             </Button>
             <Button
               onClick={triggerFileUpload}
               size="3"
-              highContrast
-              color="blue"
+              color="iris"
+              variant="outline"
             >
+              <ImageIcon />
               画像をアップロード
             </Button>
             <input
@@ -106,7 +109,8 @@ const Camera: React.FC<CameraProps> = ({ onCapture, onReset }) => {
             )}
           </Box>
           <Flex gap="4" mt="4" justify="center" width="100%">
-            <Button onClick={reset} size="3" color="red">
+            <Button onClick={reset} size="3" color="gray" variant="outline">
+              <RefreshCwIcon />
               リセット
             </Button>
           </Flex>

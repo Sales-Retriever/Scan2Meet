@@ -12,6 +12,7 @@ import {
 } from "@radix-ui/themes";
 import ReactMarkdown from "react-markdown";
 import { researchCompany } from "../services/gemini";
+import { CalendarIcon, Facebook, SearchIcon } from "lucide-react";
 
 // 名刺情報の型定義
 export interface BusinessCardData {
@@ -101,17 +102,55 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
   if (!data) {
     return null;
   }
+  const fullName =
+    data.lastName && data.firstName
+      ? `${data.lastName} ${data.firstName}`
+      : data.lastName || data.firstName || "";
 
   return (
     <Box width="100%">
       <Box width="100%" maxWidth="500px" mx="auto" my="4">
         <Card size="2">
           <Box mb="4">
-            <Heading size="5" mb="1">
-              {data.lastName && data.firstName
-                ? `${data.lastName} ${data.firstName}`
-                : data.lastName || data.firstName || "名前なし"}
-            </Heading>
+            <Flex gap="3" mt="5" align="center" wrap="wrap">
+              <Heading size="5" mb="1">
+                {data.lastName && data.firstName
+                  ? `${data.lastName} ${data.firstName}`
+                  : data.lastName || data.firstName || "名前なし"}
+              </Heading>
+              <Button
+                onClick={() => {
+                  if (fullName) {
+                    const searchUrl = `https://www.facebook.com/search/people/?q=${encodeURIComponent(
+                      fullName
+                    )}`;
+
+                    window.open(searchUrl, "_blank");
+                  }
+                }}
+                size="2"
+                color="indigo"
+                variant="ghost"
+              >
+                <Facebook />
+              </Button>
+              <Button
+                onClick={() => {
+                  if (fullName) {
+                    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(
+                      fullName
+                    )}`;
+
+                    window.open(searchUrl, "_blank");
+                  }
+                }}
+                size="2"
+                color="gray"
+                variant="ghost"
+              >
+                <SearchIcon />
+              </Button>
+            </Flex>
             {data.position && (
               <Text size="2" color="gray">
                 {data.position}
@@ -240,31 +279,8 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
               size="2"
               color="orange"
             >
+              <CalendarIcon />
               日程調整
-            </Button>
-
-            <Button
-              onClick={() => {
-                // 名前を取得
-                const fullName =
-                  data.lastName && data.firstName
-                    ? `${data.lastName} ${data.firstName}`
-                    : data.lastName || data.firstName || "";
-
-                if (fullName) {
-                  // Facebookの検索URLを構築
-                  const searchUrl = `https://www.facebook.com/search/people/?q=${encodeURIComponent(
-                    fullName
-                  )}`;
-
-                  // 新しいタブでURLを開く
-                  window.open(searchUrl, "_blank");
-                }
-              }}
-              size="2"
-              color="indigo"
-            >
-              Facebookで検索
             </Button>
 
             {data.company && (
