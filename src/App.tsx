@@ -11,7 +11,7 @@ import { analyzeBusinessCard } from "./services/gemini";
 
 function App() {
   // 状態管理
-  const [imageData, setImageData] = useState<string | null>(null);
+  const [_imageData, setImageData] = useState<string | null>(null);
   const [cardData, setCardData] = useState<BusinessCardData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
