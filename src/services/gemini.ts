@@ -1,0 +1,107 @@
+import {
+  GoogleGenAI,
+  createUserContent,
+  createPartFromBase64,
+} from "@google/genai";
+
+// APIキーを環境変数から取得
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+// Gemini APIクライアントの初期化
+const ai = new GoogleGenAI({ apiKey });
+
+// 画像をBase64に変換する関数
+export const fileToBase64 = async (file: File): Promise<string> => {
+  return new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(file);
+  });
+};
+
+// 画像URLをBase64に変換する関数
+export const imageUrlToBase64 = async (url: string): Promise<string> => {
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return fileToBase64(new File([blob], "image.jpg", { type: "image/jpeg" }));
+};
+
+// 会社名でリサーチする関数
+export const researchCompany = async (companyName: string) => {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: [
+        `${companyName}について以下の情報を調査して日本語で要約してください：
+        1. 会社概要（設立年、本社所在地、従業員数など）
+        2. 主な事業内容
+        3. 業界での位置づけ
+        4. 最近のニュースや動向
+        
+        簡潔にまとめてください。`,
+      ],
+      config: {
+        tools: [{ googleSearch: {} }],
+      },
+    });
+
+    return {
+      summary: response.text,
+      sources:
+        response.candidates?.[0]?.groundingMetadata?.searchEntryPoint
+          ?.renderedContent || null,
+    };
+  } catch (error) {
+    console.error("会社リサーチエラー:", error);
+    throw error;
+  }
+};
+
+// 名刺画像を解析する関数
+export const analyzeBusinessCard = async (imageData: string) => {
+  try {
+    // Base64形式の画像データを準備
+    const base64Image = imageData.split(",")[1];
+    const mimeType = "image/jpeg";
+
+    const prompt = `
+      この画像は名刺です。名刺から以下の情報を抽出してJSON形式で返してください:
+      - 姓（lastName）
+      - 名（firstName）
+      - 役職（position）
+      - 部署名（department）
+      - 会社名（company）
+      - 電話番号（phone）
+      - メールアドレス（email）
+      - 住所（address）
+      - ウェブサイト（website）
+      
+      JSONのみを返してください。情報が見つからない場合は、対応するフィールドを空文字列にしてください。
+      名前は必ず姓（lastName）と名（firstName）に分けてください。日本語の名前の場合、「山田」が姓で「太郎」が名です。
+      部署名（department）は、「営業部」「技術部」「マーケティング部」などの部署を指します。
+    `;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: [
+        createUserContent([
+          prompt,
+          createPartFromBase64(base64Image, mimeType),
+        ]),
+      ],
+    });
+
+    const text = response.text;
+
+    // JSONを抽出して解析
+    const jsonMatch = text?.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+
+    throw new Error("JSONデータが見つかりませんでした");
+  } catch (error) {
+    console.error("名刺解析エラー:", error);
+    throw error;
+  }
+};
