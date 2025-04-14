@@ -1,7 +1,6 @@
 import {
   GoogleGenAI,
   createUserContent,
-  createPartFromBase64,
   createPartFromUri, // 追加
 } from "@google/genai";
 

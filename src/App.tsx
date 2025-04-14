@@ -11,7 +11,7 @@ import { analyzeBusinessCard } from "./services/gemini";
 
 function App() {
   // 状態管理
-  const [imageData, setImageData] = useState<string | null>(null); // プレビュー用
+  const [_imageData, setImageData] = useState<string | null>(null); // プレビュー用
   // Fileオブジェクトも状態として持つ（省略可能だが、再試行などに使えるかも）
   // const [imageFile, setImageFile] = useState<File | null>(null);
   const [cardData, setCardData] = useState<BusinessCardData | null>(null);
