@@ -3,7 +3,7 @@ import { Container, Flex, Heading, Text, Box } from "@radix-ui/themes";
 import "./App.css";
 
 // コンポーネントとサービスのインポート
-import Camera from "./components/Camera";
+import CameraComponent from "./components/Camera"; // Camera を CameraComponent に変更
 import BusinessCardInfo, {
   BusinessCardData,
 } from "./components/BusinessCardInfo";
@@ -77,7 +77,8 @@ function App() {
           px="4"
           style={{ backgroundColor: "#f5f5f5", flex: 1 }}
         >
-          <Camera onCapture={handleCapture} onReset={handleReset} />
+          {/* Camera を CameraComponent に変更 */}
+          <CameraComponent onCapture={handleCapture} onReset={handleReset} />
 
           {(isLoading || cardData || error) && (
             <BusinessCardInfo

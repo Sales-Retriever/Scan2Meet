@@ -17,6 +17,7 @@
     "lucide-react": "^0.488.0",
     "openai": "^4.94.0",
     "react": "^19.0.0",
+    "react-camera-pro": "^1.4.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
     "react-social-icons": "^6.24.0",

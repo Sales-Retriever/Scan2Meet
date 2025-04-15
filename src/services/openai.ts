@@ -50,7 +50,7 @@ export const analyzeBusinessCardWithOpenAI = async (imageFile: File) => {
     // 3. OpenAI APIにリクエストを送信
     console.log("Sending request to OpenAI GPT-4o...");
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1",
       messages: [
         {
           role: "user",

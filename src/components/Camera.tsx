@@ -1,9 +1,10 @@
 import React, { useRef, useState, useCallback } from "react";
-import Webcam from "react-webcam";
+// react-webcam の代わりに react-camera-pro をインポート
+import { Camera as ReactCameraPro } from "react-camera-pro";
 import { Box, Flex, Button } from "@radix-ui/themes";
 import { CameraIcon, ImageIcon, RefreshCwIcon } from "lucide-react";
 
-// Base64文字列をFileオブジェクトに変換するヘルパー関数
+// Base64文字列をFileオブジェクトに変換するヘルパー関数 (変更なし)
 function dataURLtoFile(dataurl: string, filename: string): File | null {
   const arr = dataurl.split(",");
   if (arr.length < 2) return null;
@@ -20,45 +21,56 @@ function dataURLtoFile(dataurl: string, filename: string): File | null {
 }
 
 interface CameraProps {
-  // Fileオブジェクトも渡すように変更
   onCapture: (imageData: string, imageFile: File) => void;
   onReset: () => void;
 }
 
-const Camera: React.FC<CameraProps> = ({ onCapture, onReset }) => {
-  const webcamRef = useRef<Webcam>(null);
+// react-camera-pro の Camera コンポーネントのメソッドを定義するインターフェース
+interface CameraMethods {
+  takePhoto: () => string;
+  switchCamera: () => "user" | "environment";
+  getNumberOfCameras: () => number;
+}
+
+// コンポーネント名を Camera から CameraComponent に変更 (react-camera-pro との衝突回避)
+const CameraComponent: React.FC<CameraProps> = ({ onCapture, onReset }) => {
+  // react-camera-pro 用の ref を作成し、型を CameraMethods に指定
+  const cameraRef = useRef<CameraMethods>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [isCapturing, setIsCapturing] = useState<boolean>(true);
+  // isCapturing の代わりに capturedImage の有無で表示を切り替える
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // カメラで撮影する関数
+  // カメラで撮影する関数 (react-camera-pro を使用)
   const capture = useCallback(() => {
-    if (webcamRef.current) {
-      const imageSrc = webcamRef.current.getScreenshot();
+    // cameraRef.current が null でないこと、takePhoto メソッドが存在することを確認
+    if (
+      cameraRef.current &&
+      typeof cameraRef.current.takePhoto === "function"
+    ) {
+      const imageSrc = cameraRef.current.takePhoto();
       if (imageSrc) {
-        // Base64をFileオブジェクトに変換
-        const imageFile = dataURLtoFile(imageSrc, "webcam-capture.jpg");
+        const imageFile = dataURLtoFile(imageSrc, "camera-pro-capture.jpg");
         if (imageFile) {
           setCapturedImage(imageSrc);
-          setIsCapturing(false);
-          // Fileオブジェクトも渡す
           onCapture(imageSrc, imageFile);
         } else {
-          console.error("Failed to convert webcam capture to File object.");
-          // 必要に応じてエラー処理を追加
+          console.error("Failed to convert camera capture to File object.");
         }
       }
+    } else {
+      console.error(
+        "Camera ref is not available or takePhoto method is missing."
+      );
     }
-  }, [webcamRef, onCapture]);
+  }, [cameraRef, onCapture]);
 
-  // 画像をリセットする関数
+  // 画像をリセットする関数 (変更なし)
   const reset = useCallback(() => {
     setCapturedImage(null);
-    setIsCapturing(true);
     onReset();
   }, [onReset]);
 
-  // ファイルをアップロードする関数
+  // ファイルをアップロードする関数 (変更なし)
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -66,34 +78,39 @@ const Camera: React.FC<CameraProps> = ({ onCapture, onReset }) => {
       reader.onloadend = () => {
         const imageDataUrl = reader.result as string;
         setCapturedImage(imageDataUrl);
-        setIsCapturing(false);
-        // Fileオブジェクトも渡す
         onCapture(imageDataUrl, file);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // ファイルアップロードボタンをクリックする関数
+  // ファイルアップロードボタンをクリックする関数 (変更なし)
   const triggerFileUpload = () => {
     fileInputRef.current?.click();
   };
 
   return (
     <Box width="100%" maxWidth="500px" mx="auto">
-      {isCapturing ? (
+      {/* capturedImage の有無で表示を切り替え */}
+      {!capturedImage ? (
         <>
           <Box width="100%" mb="4">
             <div style={{ borderRadius: "8px", overflow: "hidden" }}>
-              <Webcam
-                audio={false}
-                ref={webcamRef}
-                screenshotFormat="image/jpeg"
-                videoConstraints={{
-                  facingMode: "environment",
+              {/* react-camera-pro の Camera コンポーネントを使用 */}
+              <ReactCameraPro
+                ref={cameraRef}
+                facingMode="environment" // 背面カメラをデフォルトに
+                aspectRatio={16 / 9} // アスペクト比を設定 (必要に応じて変更)
+                errorMessages={{
+                  // エラーメッセージをカスタマイズ (任意)
+                  noCameraAccessible:
+                    "カメラにアクセスできません。接続を確認するか、別のブラウザをお試しください。",
+                  permissionDenied:
+                    "カメラへのアクセス許可が拒否されました。ページを更新して許可してください。",
+                  switchCamera:
+                    "利用可能なカメラが1台しかないため、切り替えできません。",
+                  canvas: "Canvasがサポートされていません。",
                 }}
-                width="100%"
-                height="auto"
               />
             </div>
           </Box>
@@ -123,18 +140,18 @@ const Camera: React.FC<CameraProps> = ({ onCapture, onReset }) => {
       ) : (
         <>
           <Box width="100%" mb="4">
-            {capturedImage && (
-              <div style={{ borderRadius: "8px", overflow: "hidden" }}>
-                <img
-                  src={capturedImage}
-                  alt="Captured"
-                  width="100%"
-                  height="auto"
-                />
-              </div>
-            )}
+            {/* プレビュー表示 (変更なし) */}
+            <div style={{ borderRadius: "8px", overflow: "hidden" }}>
+              <img
+                src={capturedImage}
+                alt="Captured"
+                width="100%"
+                height="auto"
+              />
+            </div>
           </Box>
           <Flex gap="4" mt="4" justify="center" width="100%">
+            {/* リセットボタン (変更なし) */}
             <Button onClick={reset} size="3" color="gray" variant="outline">
               <RefreshCwIcon />
               リセット
@@ -146,4 +163,5 @@ const Camera: React.FC<CameraProps> = ({ onCapture, onReset }) => {
   );
 };
 
-export default Camera;
+// エクスポート名を CameraComponent に変更
+export default CameraComponent;
