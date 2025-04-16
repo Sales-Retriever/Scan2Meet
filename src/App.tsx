@@ -34,10 +34,17 @@ function App() {
       const result = await analyzeBusinessCardWithOpenAI(capturedImageFile);
       setCardData(result);
     } catch (err) {
-      // エラーメッセージもOpenAI用に更新した方が良いかもしれない
-      console.error("OpenAI名刺解析エラー:", err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setError(`名刺の解析中にエラーが発生しました: ${errorMessage}`);
+      // より詳細なエラーログを出力
+      console.error("Full OpenAI Error:", err); // 完全なエラーオブジェクトをログに出力
+      let detailedErrorMessage = "不明なエラーが発生しました。";
+      if (err instanceof Error) {
+        detailedErrorMessage = `${err.message}${
+          err.stack ? `\nStack: ${err.stack}` : ""
+        }`;
+      } else {
+        detailedErrorMessage = String(err);
+      }
+      setError(`名刺の解析中にエラーが発生しました:\n${detailedErrorMessage}`); // UIに詳細なエラーを表示
     } finally {
       setIsLoading(false);
     }

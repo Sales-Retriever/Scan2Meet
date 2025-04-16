@@ -66,13 +66,54 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
         error: null,
       });
     } catch (err) {
-      console.error("会社リサーチエラー:", err);
+      // より詳細なエラーログを出力
+      console.error("Full Company Research Error:", err); // 完全なエラーオブジェクトをログに出力
+      let detailedErrorMessage = "不明なエラーが発生しました。";
+      if (err instanceof Error) {
+        detailedErrorMessage = `${err.message}${
+          err.stack ? `\nStack: ${err.stack}` : ""
+        }`;
+      } else {
+        detailedErrorMessage = String(err);
+      }
       setCompanyResearch({
         isLoading: false,
         data: null,
-        error: "会社情報の取得中にエラーが発生しました。",
+        error: `会社情報の取得中にエラーが発生しました:\n${detailedErrorMessage}`, // UIに詳細なエラーを表示
       });
     }
+  };
+
+  // Helper function to build scheduling URL with query parameters
+  const buildSchedulingUrl = (baseUrl: string): string => {
+    if (!data) return baseUrl; // Return base URL if no data
+
+    const params = new URLSearchParams();
+    // Get param names from env, with defaults
+    const lastNameParam =
+      import.meta.env.VITE_QUERY_PARAM_LAST_NAME || "lastName";
+    const firstNameParam =
+      import.meta.env.VITE_QUERY_PARAM_FIRST_NAME || "firstName";
+    const fullNameParam =
+      import.meta.env.VITE_QUERY_PARAM_FULL_NAME || "fullName";
+    const departmentParam =
+      import.meta.env.VITE_QUERY_PARAM_DEPARTMENT || "department";
+    const companyParam = import.meta.env.VITE_QUERY_PARAM_COMPANY || "company";
+    const emailParam = import.meta.env.VITE_QUERY_PARAM_EMAIL || "email";
+
+    // Append params if data exists
+    if (data.lastName) params.append(lastNameParam, data.lastName);
+    if (data.firstName) params.append(firstNameParam, data.firstName);
+    // Use the fullName variable already defined in the component scope
+    if (fullName) params.append(fullNameParam, fullName);
+    if (data.department) params.append(departmentParam, data.department);
+    if (data.company) params.append(companyParam, data.company);
+    if (data.email) params.append(emailParam, data.email);
+
+    // Construct final URL
+    return params.toString()
+      ? `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}${params.toString()}`
+      : baseUrl;
   };
 
   if (isLoading) {
@@ -239,50 +280,58 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
           </DataList.Root>
 
           <Flex gap="3" mt="5" justify="center" wrap="wrap">
-            <Button
-              onClick={() => {
-                // クエリパラメータを構築
-                const params = new URLSearchParams();
+            {/* Scheduling Link 1 */}
+            {import.meta.env.VITE_SCHEDULING_LINK_1 && (
+              <Button
+                onClick={() => {
+                  const url = buildSchedulingUrl(
+                    import.meta.env.VITE_SCHEDULING_LINK_1
+                  );
+                  window.open(url, "_blank");
+                }}
+                size="2"
+                color="orange"
+              >
+                <CalendarIcon />
+                日程調整 1
+              </Button>
+            )}
 
-                // 環境変数からクエリパラメータ名を取得
-                const lastNameParam =
-                  import.meta.env.VITE_QUERY_PARAM_LAST_NAME || "lastName";
-                const firstNameParam =
-                  import.meta.env.VITE_QUERY_PARAM_FIRST_NAME || "firstName";
-                const departmentParam =
-                  import.meta.env.VITE_QUERY_PARAM_DEPARTMENT || "department";
-                const companyParam =
-                  import.meta.env.VITE_QUERY_PARAM_COMPANY || "company";
-                const emailParam =
-                  import.meta.env.VITE_QUERY_PARAM_EMAIL || "email";
+            {/* Scheduling Link 2 */}
+            {import.meta.env.VITE_SCHEDULING_LINK_2 && (
+              <Button
+                onClick={() => {
+                  const url = buildSchedulingUrl(
+                    import.meta.env.VITE_SCHEDULING_LINK_2
+                  );
+                  window.open(url, "_blank");
+                }}
+                size="2"
+                color="orange"
+              >
+                <CalendarIcon />
+                日程調整 2
+              </Button>
+            )}
 
-                // 値が存在する場合のみパラメータを追加
-                if (data.lastName) params.append(lastNameParam, data.lastName);
-                if (data.firstName)
-                  params.append(firstNameParam, data.firstName);
-                if (data.department)
-                  params.append(departmentParam, data.department);
-                if (data.company) params.append(companyParam, data.company);
-                if (data.email) params.append(emailParam, data.email);
+            {/* Scheduling Link 3 */}
+            {import.meta.env.VITE_SCHEDULING_LINK_3 && (
+              <Button
+                onClick={() => {
+                  const url = buildSchedulingUrl(
+                    import.meta.env.VITE_SCHEDULING_LINK_3
+                  );
+                  window.open(url, "_blank");
+                }}
+                size="2"
+                color="orange"
+              >
+                <CalendarIcon />
+                日程調整 3
+              </Button>
+            )}
 
-                // URLを構築
-                const baseUrl = import.meta.env.VITE_SCHEDULE_TOOL_URL;
-                const url = params.toString()
-                  ? `${baseUrl}${
-                      baseUrl.includes("?") ? "&" : "?"
-                    }${params.toString()}`
-                  : baseUrl;
-
-                // 新しいタブでURLを開く
-                window.open(url, "_blank");
-              }}
-              size="2"
-              color="orange"
-            >
-              <CalendarIcon />
-              日程調整
-            </Button>
-
+            {/* Company Research Button */}
             {data.company && (
               <Button
                 onClick={handleCompanyResearch}
