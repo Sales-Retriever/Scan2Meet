@@ -162,7 +162,7 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
               <Button
                 onClick={() => {
                   if (fullName) {
-                    const searchUrl = `https://www.facebook.com/search/people/?q=${encodeURIComponent(
+                    const searchUrl = `https://www.facebook.com/search_results/?q=${encodeURIComponent(
                       fullName
                     )}`;
 
