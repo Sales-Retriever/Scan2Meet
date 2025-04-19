@@ -90,11 +90,20 @@ const CameraComponent: React.FC<CameraProps> = ({ onCapture, onReset }) => {
   };
 
   return (
-    <Box width="100%" maxWidth="500px" mx="auto">
+    <Box width="100%" maxWidth="500px" mx="auto" height="100%">
       {/* capturedImage の有無で表示を切り替え */}
       {!capturedImage ? (
-        <>
-          <Box width="100%" mb="4">
+        <Flex
+          direction="column"
+          align="center"
+          gap="4"
+          width="100%"
+          maxWidth="500px"
+          height="100%"
+          mx="auto"
+          justify="between"
+        >
+          <Box width="100%" mb="4" style={{ flex: 1 }}>
             <div style={{ borderRadius: "8px", overflow: "hidden" }}>
               {/* react-camera-pro の Camera コンポーネントを使用 */}
               <ReactCameraPro
@@ -136,7 +145,7 @@ const CameraComponent: React.FC<CameraProps> = ({ onCapture, onReset }) => {
               style={{ display: "none" }}
             />
           </Flex>
-        </>
+        </Flex>
       ) : (
         <>
           <Box width="100%" mb="4">

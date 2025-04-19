@@ -11,8 +11,9 @@ import {
   DataList,
 } from "@radix-ui/themes";
 import ReactMarkdown from "react-markdown";
-import { researchCompany } from "../services/gemini";
-import { CalendarIcon, Facebook, SearchIcon } from "lucide-react";
+// researchAll をインポート
+import { researchAll } from "../services/gemini";
+import { CalendarIcon, Facebook, SearchIcon, SparklesIcon } from "lucide-react";
 
 // 名刺情報の型定義
 export interface BusinessCardData {
@@ -38,7 +39,8 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
   isLoading,
   error,
 }) => {
-  const [companyResearch, setCompanyResearch] = useState<{
+  // 統合されたリサーチ結果用の state
+  const [researchResult, setResearchResult] = useState<{
     isLoading: boolean;
     data: { summary: string | undefined; sources: string | null } | null;
     error: string | null;
@@ -48,26 +50,27 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
     error: null,
   });
 
-  // 会社名でリサーチする関数
-  const handleCompanyResearch = async () => {
-    if (!data?.company) return;
+  // まとめてリサーチする関数
+  const handleResearchAll = async () => {
+    // data, company, fullName, department の存在を確認
+    if (!data?.company || !fullName || !data?.department) return;
 
-    setCompanyResearch({
+    setResearchResult({
       isLoading: true,
       data: null,
       error: null,
     });
 
     try {
-      const result = await researchCompany(data.company);
-      setCompanyResearch({
+      const result = await researchAll(data.company, fullName, data.department);
+      setResearchResult({
         isLoading: false,
         data: result,
         error: null,
       });
     } catch (err) {
       // より詳細なエラーログを出力
-      console.error("Full Company Research Error:", err); // 完全なエラーオブジェクトをログに出力
+      console.error("Full Research Error:", err); // 完全なエラーオブジェクトをログに出力
       let detailedErrorMessage = "不明なエラーが発生しました。";
       if (err instanceof Error) {
         detailedErrorMessage = `${err.message}${
@@ -76,10 +79,10 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
       } else {
         detailedErrorMessage = String(err);
       }
-      setCompanyResearch({
+      setResearchResult({
         isLoading: false,
         data: null,
-        error: `会社情報の取得中にエラーが発生しました:\n${detailedErrorMessage}`, // UIに詳細なエラーを表示
+        error: `情報のリサーチ中にエラーが発生しました:\n${detailedErrorMessage}`, // UIに詳細なエラーを表示
       });
     }
   };
@@ -100,6 +103,7 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
       import.meta.env.VITE_QUERY_PARAM_DEPARTMENT || "department";
     const companyParam = import.meta.env.VITE_QUERY_PARAM_COMPANY || "company";
     const emailParam = import.meta.env.VITE_QUERY_PARAM_EMAIL || "email";
+    const phoneParam = import.meta.env.VITE_QUERY_PARAM_PHONE || "phone"; // 電話番号パラメータ名を取得
 
     // Append params if data exists
     if (data.lastName) params.append(lastNameParam, data.lastName);
@@ -109,6 +113,7 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
     if (data.department) params.append(departmentParam, data.department);
     if (data.company) params.append(companyParam, data.company);
     if (data.email) params.append(emailParam, data.email);
+    if (data.phone) params.append(phoneParam, data.phone); // 電話番号を追加
 
     // Construct final URL
     return params.toString()
@@ -173,7 +178,7 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
                 color="indigo"
                 variant="ghost"
               >
-                <Facebook />
+                <Facebook className="w-4 h-4" />
               </Button>
               <Button
                 onClick={() => {
@@ -189,7 +194,7 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
                 color="gray"
                 variant="ghost"
               >
-                <SearchIcon />
+                <SearchIcon className="w-4 h-4" />
               </Button>
             </Flex>
             {data.position && (
@@ -218,14 +223,54 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
             {data.department && (
               <DataList.Item>
                 <DataList.Label minWidth="88px">部署名</DataList.Label>
-                <DataList.Value>{data.department}</DataList.Value>
+                <DataList.Value>
+                  <Flex gap="3" align="center">
+                    {data.department}
+                    <Button
+                      onClick={() => {
+                        if (fullName) {
+                          const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(
+                            `${data.company} ${data.department}`
+                          )}`;
+
+                          window.open(searchUrl, "_blank");
+                        }
+                      }}
+                      size="2"
+                      color="gray"
+                      variant="ghost"
+                    >
+                      <SearchIcon className="w-4 h-4" />
+                    </Button>
+                  </Flex>
+                </DataList.Value>
               </DataList.Item>
             )}
 
             {data.company && (
               <DataList.Item>
                 <DataList.Label minWidth="88px">会社名</DataList.Label>
-                <DataList.Value>{data.company}</DataList.Value>
+                <DataList.Value>
+                  <Flex gap="3" align="center">
+                    {data.company}
+                    <Button
+                      onClick={() => {
+                        if (fullName) {
+                          const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(
+                            data.company
+                          )}`;
+
+                          window.open(searchUrl, "_blank");
+                        }
+                      }}
+                      size="2"
+                      color="gray"
+                      variant="ghost"
+                    >
+                      <SearchIcon className="w-4 h-4" />
+                    </Button>
+                  </Flex>
+                </DataList.Value>
               </DataList.Item>
             )}
 
@@ -280,102 +325,106 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
           </DataList.Root>
 
           <Flex gap="3" mt="5" justify="center" wrap="wrap">
-            {/* Scheduling Link 1 */}
+            {/* Scheduling Links */}
+            {/* Scheduling Links - Add checks for undefined */}
             {import.meta.env.VITE_SCHEDULING_LINK_1 && (
               <Button
                 onClick={() => {
-                  const url = buildSchedulingUrl(
-                    import.meta.env.VITE_SCHEDULING_LINK_1
-                  );
-                  window.open(url, "_blank");
+                  const baseUrl = import.meta.env.VITE_SCHEDULING_LINK_1;
+                  if (baseUrl) {
+                    // Check if baseUrl is defined
+                    const url = buildSchedulingUrl(baseUrl);
+                    window.open(url, "_blank");
+                  }
                 }}
                 size="2"
                 color="orange"
               >
-                <CalendarIcon />
+                <CalendarIcon className="w-4 h-4" />
                 日程調整 1
               </Button>
             )}
-
-            {/* Scheduling Link 2 */}
             {import.meta.env.VITE_SCHEDULING_LINK_2 && (
               <Button
                 onClick={() => {
-                  const url = buildSchedulingUrl(
-                    import.meta.env.VITE_SCHEDULING_LINK_2
-                  );
-                  window.open(url, "_blank");
+                  const baseUrl = import.meta.env.VITE_SCHEDULING_LINK_2;
+                  if (baseUrl) {
+                    // Check if baseUrl is defined
+                    const url = buildSchedulingUrl(baseUrl);
+                    window.open(url, "_blank");
+                  }
                 }}
                 size="2"
                 color="orange"
               >
-                <CalendarIcon />
+                <CalendarIcon className="w-4 h-4" />
                 日程調整 2
               </Button>
             )}
-
-            {/* Scheduling Link 3 */}
             {import.meta.env.VITE_SCHEDULING_LINK_3 && (
               <Button
                 onClick={() => {
-                  const url = buildSchedulingUrl(
-                    import.meta.env.VITE_SCHEDULING_LINK_3
-                  );
-                  window.open(url, "_blank");
+                  const baseUrl = import.meta.env.VITE_SCHEDULING_LINK_3;
+                  if (baseUrl) {
+                    // Check if baseUrl is defined
+                    const url = buildSchedulingUrl(baseUrl);
+                    window.open(url, "_blank");
+                  }
                 }}
                 size="2"
                 color="orange"
               >
-                <CalendarIcon />
+                <CalendarIcon className="w-4 h-4" />
                 日程調整 3
               </Button>
             )}
 
-            {/* Company Research Button */}
-            {data.company && (
+            {/* Combined Research Button */}
+            {data.company && fullName && data.department && (
               <Button
-                onClick={handleCompanyResearch}
-                disabled={companyResearch.isLoading}
+                onClick={handleResearchAll}
+                disabled={researchResult.isLoading}
                 size="2"
-                color="iris"
               >
-                {companyResearch.isLoading ? "リサーチ中..." : "会社をリサーチ"}
+                <SparklesIcon className="w-4 h-4" />
+                {researchResult.isLoading ? "リサーチ中..." : "AIリサーチ"}
               </Button>
             )}
           </Flex>
         </Card>
       </Box>
 
-      {companyResearch.isLoading && (
+      {/* Display Combined Research Result */}
+      {researchResult.isLoading && (
         <Box width="100%" maxWidth="500px" mx="auto" my="3">
           <Card size="2">
             <Text size="2" color="blue" align="center">
-              会社情報をリサーチ中...
+              情報をリサーチ中...
             </Text>
           </Card>
         </Box>
       )}
 
-      {companyResearch.error && (
+      {researchResult.error && (
         <Box width="100%" maxWidth="500px" mx="auto" my="3">
           <Card size="2">
             <Text size="2" color="red" align="center">
-              {companyResearch.error}
+              {researchResult.error}
             </Text>
           </Card>
         </Box>
       )}
 
-      {companyResearch.data && (
+      {researchResult.data && (
         <Box width="100%" maxWidth="500px" mx="auto" my="3">
           <Card size="2">
-            <Heading size="4" mb="3" color="iris">
-              会社情報
+            <Heading size="4" mb="3" color="purple">
+              リサーチ結果
             </Heading>
             <Box>
-              <div className="markdown-content">
+              <div className="m-2">
                 <ReactMarkdown>
-                  {companyResearch.data.summary || ""}
+                  {researchResult.data.summary || ""}
                 </ReactMarkdown>
               </div>
             </Box>

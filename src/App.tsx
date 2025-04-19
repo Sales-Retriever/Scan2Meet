@@ -7,8 +7,8 @@ import CameraComponent from "./components/Camera"; // Camera を CameraComponent
 import BusinessCardInfo, {
   BusinessCardData,
 } from "./components/BusinessCardInfo";
-// import { analyzeBusinessCard } from "./services/gemini"; // Gemini版はコメントアウトまたは削除
-import { analyzeBusinessCardWithOpenAI } from "./services/openai"; // OpenAI版をインポート
+import { analyzeBusinessCard } from "./services/gemini"; // Gemini版のコメントを解除
+// import { analyzeBusinessCardWithOpenAI } from "./services/openai"; // OpenAI版をコメントアウト
 
 function App() {
   // 状態管理
@@ -28,14 +28,13 @@ function App() {
     // setImageFile(capturedImageFile); // 必要ならFileオブジェクトも保持
     setIsLoading(true);
     setError(null);
-
     try {
-      // OpenAI APIで名刺を解析 (Fileオブジェクトを渡す)
-      const result = await analyzeBusinessCardWithOpenAI(capturedImageFile);
+      // Gemini APIで名刺を解析 (Fileオブジェクトを渡す)
+      const result = await analyzeBusinessCard(capturedImageFile); // analyzeBusinessCardWithOpenAI を analyzeBusinessCard に変更
       setCardData(result);
     } catch (err) {
       // より詳細なエラーログを出力
-      console.error("Full OpenAI Error:", err); // 完全なエラーオブジェクトをログに出力
+      console.error("Full Gemini Error:", err); // OpenAI を Gemini に変更
       let detailedErrorMessage = "不明なエラーが発生しました。";
       if (err instanceof Error) {
         detailedErrorMessage = `${err.message}${
@@ -82,11 +81,11 @@ function App() {
           gap="1"
           py="2"
           px="4"
-          style={{ backgroundColor: "#f5f5f5", flex: 1 }}
+          height="100%"
+          style={{ flex: 1 }}
+          justify="end"
         >
-          {/* Camera を CameraComponent に変更 */}
           <CameraComponent onCapture={handleCapture} onReset={handleReset} />
-
           {(isLoading || cardData || error) && (
             <BusinessCardInfo
               data={cardData}
