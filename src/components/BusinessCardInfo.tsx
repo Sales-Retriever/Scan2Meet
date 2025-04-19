@@ -52,8 +52,8 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
 
   // まとめてリサーチする関数
   const handleResearchAll = async () => {
-    // data, company, fullName, department の存在を確認
-    if (!data?.company || !fullName || !data?.department) return;
+    // data, company, fullName の存在を確認 (department のチェックを削除)
+    if (!data?.company || !fullName) return;
 
     setResearchResult({
       isLoading: true,
@@ -379,8 +379,8 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
               </Button>
             )}
 
-            {/* Combined Research Button */}
-            {data.company && fullName && data.department && (
+            {/* Combined Research Button (department のチェックを削除) */}
+            {data.company && fullName && (
               <Button
                 onClick={handleResearchAll}
                 disabled={researchResult.isLoading}

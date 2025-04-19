@@ -86,13 +86,11 @@ export const researchDepartment = async (
 export const researchAll = async (
   companyName: string,
   personName: string,
-  departmentName: string
+  departmentName: string | null | undefined // departmentName をオプショナルに変更
 ) => {
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: [
-        `${companyName}、所属する ${personName}、および ${departmentName} について、公開されている情報を元に以下の点を調査して日本語で要約してください：
+    // プロンプトを動的に構築
+    let prompt = `${companyName} および所属する ${personName} について、公開されている情報を元に以下の点を調査して日本語で要約してください：
         【会社について】
         1. 会社概要（設立年、本社所在地、従業員数など）
         2. 主な事業内容
@@ -100,14 +98,24 @@ export const researchAll = async (
         4. 最近のニュースや動向
         【人物について】（公開情報がない場合は「不明」と記載）
         1. ${personName} の役職や経歴（もしあれば）
-        2. ${personName} に関連する最近のニュースや活動（もしあれば）
+        2. ${personName} に関連する最近のニュースや活動（もしあれば）`;
+
+    // departmentName が存在する場合のみ部署情報を追加
+    if (departmentName) {
+      prompt += `
         【部署について】（公開情報がない場合は「不明」と記載）
         1. ${departmentName} の主な役割や担当業務
         2. ${departmentName} の組織構造やチーム構成（もし情報があれば）
-        3. ${departmentName} に関連する最近のニュースや取り組み
+        3. ${departmentName} に関連する最近のニュースや取り組み`;
+    }
+
+    prompt += `
         
-        簡潔にまとめてください。`,
-      ],
+        簡潔にまとめてください。`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: [prompt], // 動的に生成したプロンプトを使用
       config: {
         tools: [{ googleSearch: {} }],
       },
