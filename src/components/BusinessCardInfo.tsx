@@ -9,11 +9,20 @@ import {
   Button,
   Separator,
   DataList,
+  TextField,
+  IconButton,
 } from "@radix-ui/themes";
 import ReactMarkdown from "react-markdown";
 // researchAll をインポート
 import { researchAll } from "../services/gemini";
-import { CalendarIcon, Facebook, SearchIcon, SparklesIcon } from "lucide-react";
+import {
+  CalendarIcon,
+  Facebook,
+  SearchIcon,
+  SparklesIcon,
+  Edit2Icon,
+  CheckIcon,
+} from "lucide-react";
 
 // 名刺情報の型定義
 export interface BusinessCardData {
@@ -32,61 +41,52 @@ interface BusinessCardInfoProps {
   data: BusinessCardData | null;
   isLoading: boolean;
   error: string | null;
+  researchResult: {
+    isLoading: boolean;
+    data: { summary: string | undefined; sources: string | null } | null;
+    error: string | null;
+  };
+  onResearch: () => void;
+  onUpdate: (updatedData: BusinessCardData) => void; // 編集内容を親コンポーネントに伝えるコールバック
 }
 
 const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
   data,
   isLoading,
   error,
+  researchResult,
+  onResearch,
+  onUpdate,
 }) => {
-  // 統合されたリサーチ結果用の state
-  const [researchResult, setResearchResult] = useState<{
-    isLoading: boolean;
-    data: { summary: string | undefined; sources: string | null } | null;
-    error: string | null;
-  }>({
-    isLoading: false,
-    data: null,
-    error: null,
-  });
+  // 編集モードの状態
+  const [isEditing, setIsEditing] = useState(false);
+  // 編集中のデータを保持する状態
+  const [editingData, setEditingData] = useState<BusinessCardData | null>(null);
 
-  // まとめてリサーチする関数
-  const handleResearchAll = async () => {
-    // data, company, fullName の存在を確認 (department のチェックを削除)
-    if (!data?.company || !fullName) return;
+  // データが変更されたときに編集中のデータを初期化
+  React.useEffect(() => {
+    if (data) {
+      setEditingData(data);
+    }
+  }, [data]);
 
-    setResearchResult({
-      isLoading: true,
-      data: null,
-      error: null,
-    });
-
-    try {
-      const result = await researchAll(data.company, fullName, data.department);
-      setResearchResult({
-        isLoading: false,
-        data: result,
-        error: null,
-      });
-    } catch (err) {
-      // より詳細なエラーログを出力
-      console.error("Full Research Error:", err); // 完全なエラーオブジェクトをログに出力
-      let detailedErrorMessage = "不明なエラーが発生しました。";
-      if (err instanceof Error) {
-        detailedErrorMessage = `${err.message}${
-          err.stack ? `\nStack: ${err.stack}` : ""
-        }`;
-      } else {
-        detailedErrorMessage = String(err);
-      }
-      setResearchResult({
-        isLoading: false,
-        data: null,
-        error: `情報のリサーチ中にエラーが発生しました:\n${detailedErrorMessage}`, // UIに詳細なエラーを表示
-      });
+  // 編集内容を保存する関数
+  const handleSave = () => {
+    if (editingData) {
+      onUpdate(editingData);
+      setIsEditing(false);
     }
   };
 
+  // 入力フィールドの変更を処理する関数
+  const handleChange = (field: keyof BusinessCardData, value: string) => {
+    if (editingData) {
+      setEditingData({
+        ...editingData,
+        [field]: value,
+      });
+    }
+  };
   // Helper function to build scheduling URL with query parameters
   const buildSchedulingUrl = (baseUrl: string): string => {
     if (!data) return baseUrl; // Return base URL if no data
@@ -145,13 +145,13 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
     );
   }
 
-  if (!data) {
+  if (!data || !editingData) {
     return null;
   }
   const fullName =
-    data.lastName && data.firstName
-      ? `${data.lastName} ${data.firstName}`
-      : data.lastName || data.firstName || "";
+    editingData.lastName && editingData.firstName
+      ? `${editingData.lastName} ${editingData.firstName}`
+      : editingData.lastName || editingData.firstName || "";
 
   return (
     <Box width="100%">
@@ -160,10 +160,20 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
           <Box mb="4">
             <Flex gap="3" mt="5" align="center" wrap="wrap">
               <Heading size="5" mb="1">
-                {data.lastName && data.firstName
-                  ? `${data.lastName} ${data.firstName}`
-                  : data.lastName || data.firstName || "名前なし"}
+                {editingData.lastName && editingData.firstName
+                  ? `${editingData.lastName} ${editingData.firstName}`
+                  : editingData.lastName || editingData.firstName || "名前なし"}
               </Heading>
+
+              {/* 編集モード切り替えボタン */}
+              <IconButton
+                size="2"
+                variant="ghost"
+                color={isEditing ? "green" : "gray"}
+                onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
+              >
+                {isEditing ? <CheckIcon /> : <Edit2Icon />}
+              </IconButton>
               <Button
                 onClick={() => {
                   if (fullName) {
@@ -197,131 +207,210 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
                 <SearchIcon className="w-4 h-4" />
               </Button>
             </Flex>
-            {data.position && (
+            {editingData.position && (
               <Text size="2" color="gray">
-                {data.position}
+                {editingData.position}
               </Text>
             )}
             <Separator size="4" my="3" />
           </Box>
 
           <DataList.Root>
-            {data.lastName && (
-              <DataList.Item>
-                <DataList.Label minWidth="88px">姓</DataList.Label>
-                <DataList.Value>{data.lastName}</DataList.Value>
-              </DataList.Item>
-            )}
-
-            {data.firstName && (
-              <DataList.Item>
-                <DataList.Label minWidth="88px">名</DataList.Label>
-                <DataList.Value>{data.firstName}</DataList.Value>
-              </DataList.Item>
-            )}
-
-            {data.department && (
-              <DataList.Item>
-                <DataList.Label minWidth="88px">部署名</DataList.Label>
-                <DataList.Value>
-                  <Flex gap="3" align="center">
-                    {data.department}
-                    <Button
-                      onClick={() => {
-                        if (fullName) {
-                          const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(
-                            `${data.company} ${data.department}`
-                          )}`;
-
-                          window.open(searchUrl, "_blank");
-                        }
-                      }}
-                      size="2"
-                      color="gray"
-                      variant="ghost"
-                    >
-                      <SearchIcon className="w-4 h-4" />
-                    </Button>
-                  </Flex>
-                </DataList.Value>
-              </DataList.Item>
-            )}
-
-            {data.company && (
-              <DataList.Item>
-                <DataList.Label minWidth="88px">会社名</DataList.Label>
-                <DataList.Value>
-                  <Flex gap="3" align="center">
-                    {data.company}
-                    <Button
-                      onClick={() => {
-                        if (fullName) {
-                          const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(
-                            data.company
-                          )}`;
-
-                          window.open(searchUrl, "_blank");
-                        }
-                      }}
-                      size="2"
-                      color="gray"
-                      variant="ghost"
-                    >
-                      <SearchIcon className="w-4 h-4" />
-                    </Button>
-                  </Flex>
-                </DataList.Value>
-              </DataList.Item>
-            )}
-
-            {data.phone && (
-              <DataList.Item>
-                <DataList.Label minWidth="88px">電話番号</DataList.Label>
-                <DataList.Value>
-                  <Link href={`tel:${data.phone}`} size="2">
-                    {data.phone}
-                  </Link>
-                </DataList.Value>
-              </DataList.Item>
-            )}
-
-            {data.email && (
-              <DataList.Item>
-                <DataList.Label minWidth="88px">メール</DataList.Label>
-                <DataList.Value>
-                  <Link href={`mailto:${data.email}`} size="2">
-                    {data.email}
-                  </Link>
-                </DataList.Value>
-              </DataList.Item>
-            )}
-
-            {data.address && (
-              <DataList.Item>
-                <DataList.Label minWidth="88px">住所</DataList.Label>
-                <DataList.Value>{data.address}</DataList.Value>
-              </DataList.Item>
-            )}
-
-            {data.website && (
-              <DataList.Item>
-                <DataList.Label minWidth="88px">ウェブサイト</DataList.Label>
-                <DataList.Value>
-                  <Link
-                    href={
-                      data.website.startsWith("http")
-                        ? data.website
-                        : `https://${data.website}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
+            <DataList.Item>
+              <DataList.Label minWidth="88px">姓</DataList.Label>
+              <DataList.Value>
+                {isEditing ? (
+                  <TextField.Root
                     size="2"
-                  >
-                    {data.website}
-                  </Link>
-                </DataList.Value>
-              </DataList.Item>
-            )}
+                    value={editingData.lastName}
+                    onChange={(e) => handleChange("lastName", e.target.value)}
+                  />
+                ) : (
+                  editingData.lastName
+                )}
+              </DataList.Value>
+            </DataList.Item>
+
+            <DataList.Item>
+              <DataList.Label minWidth="88px">名</DataList.Label>
+              <DataList.Value>
+                {isEditing ? (
+                  <TextField.Root
+                    size="2"
+                    value={editingData.firstName}
+                    onChange={(e) => handleChange("firstName", e.target.value)}
+                  />
+                ) : (
+                  editingData.firstName
+                )}
+              </DataList.Value>
+            </DataList.Item>
+
+            <DataList.Item>
+              <DataList.Label minWidth="88px">役職</DataList.Label>
+              <DataList.Value>
+                {isEditing ? (
+                  <TextField.Root
+                    size="2"
+                    value={editingData.position}
+                    onChange={(e) => handleChange("position", e.target.value)}
+                  />
+                ) : (
+                  editingData.position
+                )}
+              </DataList.Value>
+            </DataList.Item>
+
+            <DataList.Item>
+              <DataList.Label minWidth="88px">部署名</DataList.Label>
+              <DataList.Value>
+                {isEditing ? (
+                  <TextField.Root
+                    size="2"
+                    value={editingData.department}
+                    onChange={(e) => handleChange("department", e.target.value)}
+                  />
+                ) : (
+                  <Flex gap="3" align="center">
+                    {editingData.department}
+                    {editingData.department && (
+                      <Button
+                        onClick={() => {
+                          if (fullName) {
+                            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(
+                              `${editingData.company} ${editingData.department}`
+                            )}`;
+
+                            window.open(searchUrl, "_blank");
+                          }
+                        }}
+                        size="2"
+                        color="gray"
+                        variant="ghost"
+                      >
+                        <SearchIcon className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </Flex>
+                )}
+              </DataList.Value>
+            </DataList.Item>
+
+            <DataList.Item>
+              <DataList.Label minWidth="88px">会社名</DataList.Label>
+              <DataList.Value>
+                {isEditing ? (
+                  <TextField.Root
+                    size="2"
+                    value={editingData.company}
+                    onChange={(e) => handleChange("company", e.target.value)}
+                  />
+                ) : (
+                  <Flex gap="3" align="center">
+                    {editingData.company}
+                    {editingData.company && (
+                      <Button
+                        onClick={() => {
+                          if (fullName) {
+                            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(
+                              editingData.company
+                            )}`;
+
+                            window.open(searchUrl, "_blank");
+                          }
+                        }}
+                        size="2"
+                        color="gray"
+                        variant="ghost"
+                      >
+                        <SearchIcon className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </Flex>
+                )}
+              </DataList.Value>
+            </DataList.Item>
+
+            <DataList.Item>
+              <DataList.Label minWidth="88px">電話番号</DataList.Label>
+              <DataList.Value>
+                {isEditing ? (
+                  <TextField.Root
+                    size="2"
+                    value={editingData.phone}
+                    onChange={(e) => handleChange("phone", e.target.value)}
+                  />
+                ) : (
+                  editingData.phone && (
+                    <Link href={`tel:${editingData.phone}`} size="2">
+                      {editingData.phone}
+                    </Link>
+                  )
+                )}
+              </DataList.Value>
+            </DataList.Item>
+
+            <DataList.Item>
+              <DataList.Label minWidth="88px">メール</DataList.Label>
+              <DataList.Value>
+                {isEditing ? (
+                  <TextField.Root
+                    size="2"
+                    value={editingData.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                  />
+                ) : (
+                  editingData.email && (
+                    <Link href={`mailto:${editingData.email}`} size="2">
+                      {editingData.email}
+                    </Link>
+                  )
+                )}
+              </DataList.Value>
+            </DataList.Item>
+
+            <DataList.Item>
+              <DataList.Label minWidth="88px">住所</DataList.Label>
+              <DataList.Value>
+                {isEditing ? (
+                  <TextField.Root
+                    size="2"
+                    value={editingData.address}
+                    onChange={(e) => handleChange("address", e.target.value)}
+                  />
+                ) : (
+                  editingData.address
+                )}
+              </DataList.Value>
+            </DataList.Item>
+
+            <DataList.Item>
+              <DataList.Label minWidth="88px">ウェブサイト</DataList.Label>
+              <DataList.Value>
+                {isEditing ? (
+                  <TextField.Root
+                    size="2"
+                    value={editingData.website}
+                    onChange={(e) => handleChange("website", e.target.value)}
+                  />
+                ) : (
+                  editingData.website && (
+                    <Link
+                      href={
+                        editingData.website.startsWith("http")
+                          ? editingData.website
+                          : `https://${editingData.website}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="2"
+                    >
+                      {editingData.website}
+                    </Link>
+                  )
+                )}
+              </DataList.Value>
+            </DataList.Item>
           </DataList.Root>
 
           <Flex gap="3" mt="5" justify="center" wrap="wrap">
@@ -380,9 +469,9 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
             )}
 
             {/* Combined Research Button (department のチェックを削除) */}
-            {data.company && fullName && (
+            {editingData.company && fullName && (
               <Button
-                onClick={handleResearchAll}
+                onClick={onResearch}
                 disabled={researchResult.isLoading}
                 size="2"
               >

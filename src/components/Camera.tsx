@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback } from "react";
 // react-webcam の代わりに react-camera-pro をインポート
 import { Camera as ReactCameraPro } from "react-camera-pro";
 import { Box, Flex, Button } from "@radix-ui/themes";
-import { CameraIcon, ImageIcon, RefreshCwIcon } from "lucide-react";
+import { CameraIcon, ImageIcon, Loader, RefreshCwIcon } from "lucide-react";
 
 // Base64文字列をFileオブジェクトに変換するヘルパー関数 (変更なし)
 function dataURLtoFile(dataurl: string, filename: string): File | null {
@@ -23,6 +23,7 @@ function dataURLtoFile(dataurl: string, filename: string): File | null {
 interface CameraProps {
   onCapture: (imageData: string, imageFile: File) => void;
   onReset: () => void;
+  isLoading?: boolean; // ローディング状態を追加
 }
 
 // react-camera-pro の Camera コンポーネントのメソッドを定義するインターフェース
@@ -33,7 +34,11 @@ interface CameraMethods {
 }
 
 // コンポーネント名を Camera から CameraComponent に変更 (react-camera-pro との衝突回避)
-const CameraComponent: React.FC<CameraProps> = ({ onCapture, onReset }) => {
+const CameraComponent: React.FC<CameraProps> = ({
+  onCapture,
+  onReset,
+  isLoading = false,
+}) => {
   // react-camera-pro 用の ref を作成し、型を CameraMethods に指定
   const cameraRef = useRef<CameraMethods>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -103,13 +108,13 @@ const CameraComponent: React.FC<CameraProps> = ({ onCapture, onReset }) => {
           mx="auto"
           justify="between"
         >
-          <Box width="100%" mb="4" style={{ flex: 1 }}>
+          <Box width="100%" mb="" style={{ flex: 1, position: "relative" }}>
             <div style={{ borderRadius: "8px", overflow: "hidden" }}>
               {/* react-camera-pro の Camera コンポーネントを使用 */}
               <ReactCameraPro
                 ref={cameraRef}
                 facingMode="environment" // 背面カメラをデフォルトに
-                aspectRatio={16 / 9} // アスペクト比を設定 (必要に応じて変更)
+                aspectRatio={9 / 14} // アスペクト比をスマホの縦長に合わせて変更
                 errorMessages={{
                   // エラーメッセージをカスタマイズ (任意)
                   noCameraAccessible:
@@ -122,20 +127,53 @@ const CameraComponent: React.FC<CameraProps> = ({ onCapture, onReset }) => {
                 }}
               />
             </div>
+            {/* カメラ画面に撮影ボタンをオーバーレイ */}
+            <Flex
+              style={{
+                position: "absolute",
+                bottom: "20px",
+                left: 0,
+                right: 0,
+                justifyContent: "center",
+              }}
+            >
+              <Button
+                onClick={capture}
+                size="3"
+                color="iris"
+                disabled={isLoading}
+                style={{
+                  borderRadius: "50%",
+                  width: "60px",
+                  height: "60px",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  position: "relative",
+                }}
+              >
+                <CameraIcon size={24} />
+              </Button>
+            </Flex>
           </Box>
-          <Flex gap="4" mt="4" justify="center" width="100%">
-            <Button onClick={capture} size="3" color="iris">
-              <CameraIcon />
-              撮影
-            </Button>
+          <Flex gap="4" mt="" justify="center" width="100%">
             <Button
               onClick={triggerFileUpload}
               size="3"
               color="iris"
               variant="outline"
+              disabled={isLoading}
+              style={{ width: "100%" }}
             >
-              <ImageIcon />
-              画像をアップロード
+              {isLoading ? (
+                "処理中..."
+              ) : (
+                <>
+                  <ImageIcon />
+                  画像をアップロード
+                </>
+              )}
             </Button>
             <input
               type="file"
@@ -148,8 +186,8 @@ const CameraComponent: React.FC<CameraProps> = ({ onCapture, onReset }) => {
         </Flex>
       ) : (
         <>
-          <Box width="100%" mb="4">
-            {/* プレビュー表示 (変更なし) */}
+          <Box width="100%" style={{ position: "relative" }}>
+            {/* プレビュー表示 */}
             <div style={{ borderRadius: "8px", overflow: "hidden" }}>
               <img
                 src={capturedImage}
@@ -158,14 +196,44 @@ const CameraComponent: React.FC<CameraProps> = ({ onCapture, onReset }) => {
                 height="auto"
               />
             </div>
+            {/* ローディングインジケーター */}
+            {isLoading && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                <Loader className="animate-spin" size={32} />
+              </div>
+            )}
+            {/* リセットボタンをオーバーレイ */}
+            <Flex
+              style={{
+                position: "absolute",
+                bottom: "20px",
+                left: 0,
+                right: 0,
+                justifyContent: "center",
+              }}
+            >
+              <Button
+                onClick={reset}
+                size="3"
+                color="gray"
+                variant="outline"
+                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.7)",
+                  backdropFilter: "blur(4px)",
+                }}
+              >
+                <RefreshCwIcon />
+                リセット
+              </Button>
+            </Flex>
           </Box>
-          <Flex gap="4" mt="4" justify="center" width="100%">
-            {/* リセットボタン (変更なし) */}
-            <Button onClick={reset} size="3" color="gray" variant="outline">
-              <RefreshCwIcon />
-              リセット
-            </Button>
-          </Flex>
         </>
       )}
     </Box>
