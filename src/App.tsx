@@ -205,20 +205,63 @@ function App() {
                 // 編集された名刺データを更新
                 setCardData(updatedData);
 
-                // 会社名や名前が変更された場合、リサーチ結果をリセット
-                const shouldResetResearch =
+                // 会社名や名前が変更された場合、新しい情報でリサーチを実行
+                const shouldReResearch =
                   cardData &&
                   (cardData.company !== updatedData.company ||
                     cardData.lastName !== updatedData.lastName ||
                     cardData.firstName !== updatedData.firstName ||
                     cardData.department !== updatedData.department);
 
-                if (shouldResetResearch) {
-                  setResearchResult({
-                    isLoading: false,
-                    data: null,
-                    error: null,
-                  });
+                if (shouldReResearch && updatedData.company) {
+                  // 少し遅延させてからリサーチを実行（UIの更新を先に行うため）
+                  setTimeout(() => {
+                    const fullName =
+                      updatedData.lastName && updatedData.firstName
+                        ? `${updatedData.lastName} ${updatedData.firstName}`
+                        : updatedData.lastName || updatedData.firstName || "";
+
+                    if (fullName) {
+                      // リサーチ開始
+                      setResearchResult({
+                        isLoading: true,
+                        data: null,
+                        error: null,
+                      });
+
+                      researchAll(
+                        updatedData.company,
+                        fullName,
+                        updatedData.department
+                      )
+                        .then((researchData) => {
+                          setResearchResult({
+                            isLoading: false,
+                            data: researchData,
+                            error: null,
+                          });
+                        })
+                        .catch((researchErr) => {
+                          console.error("Full Research Error:", researchErr);
+                          let researchErrorMessage =
+                            "不明なエラーが発生しました。";
+                          if (researchErr instanceof Error) {
+                            researchErrorMessage = `${researchErr.message}${
+                              researchErr.stack
+                                ? `\nStack: ${researchErr.stack}`
+                                : ""
+                            }`;
+                          } else {
+                            researchErrorMessage = String(researchErr);
+                          }
+                          setResearchResult({
+                            isLoading: false,
+                            data: null,
+                            error: `情報のリサーチ中にエラーが発生しました:\n${researchErrorMessage}`,
+                          });
+                        });
+                    }
+                  }, 500); // 500ミリ秒の遅延を設定
                 }
               }}
             />
