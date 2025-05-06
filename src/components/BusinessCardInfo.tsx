@@ -13,8 +13,6 @@ import {
   IconButton,
 } from "@radix-ui/themes";
 import ReactMarkdown from "react-markdown";
-// researchAll をインポート
-import { researchAll } from "../services/gemini";
 import {
   CalendarIcon,
   Facebook,
