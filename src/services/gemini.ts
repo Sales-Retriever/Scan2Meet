@@ -114,7 +114,7 @@ export const researchAll = async (
         簡潔にまとめてください。`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash-lite-preview-06-17",
       contents: [prompt], // 動的に生成したプロンプトを使用
       config: {
         tools: [{ googleSearch: {} }],
@@ -177,7 +177,7 @@ export const analyzeBusinessCard = async (imageFile: File) => {
 
     // 3. アップロードされた画像のURIを使用してコンテンツ生成
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash-lite-preview-06-17",
       contents: [
         createUserContent([
           prompt,
