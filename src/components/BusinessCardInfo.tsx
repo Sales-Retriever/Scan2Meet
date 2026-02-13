@@ -21,6 +21,7 @@ import {
   Edit2Icon,
   CheckIcon,
 } from "lucide-react";
+import { useSchedulingLinks } from "../hooks/useSchedulingLinks";
 
 // 名刺情報の型定義
 export interface BusinessCardData {
@@ -56,6 +57,7 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
   onResearch,
   onUpdate,
 }) => {
+  const { links: schedulingLinks } = useSchedulingLinks();
   // 編集モードの状態
   const [isEditing, setIsEditing] = useState(false);
   // 編集中のデータを保持する状態
@@ -412,61 +414,23 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
           </DataList.Root>
 
           <Flex gap="3" mt="5" justify="center" wrap="wrap">
-            {/* Scheduling Links */}
-            {/* Scheduling Links - Add checks for undefined */}
-            {import.meta.env.VITE_SCHEDULING_LINK_1 && (
+            {/* Scheduling Links (LocalStorage) */}
+            {schedulingLinks.map((link) => (
               <Button
+                key={link.id}
                 onClick={() => {
-                  const baseUrl = import.meta.env.VITE_SCHEDULING_LINK_1;
-                  if (baseUrl) {
-                    // Check if baseUrl is defined
-                    const url = buildSchedulingUrl(baseUrl);
-                    window.open(url, "_blank");
-                  }
+                  const url = buildSchedulingUrl(link.url);
+                  window.open(url, "_blank");
                 }}
                 size="2"
                 color="orange"
               >
                 <CalendarIcon className="w-4 h-4" />
-                日程調整 1
+                {link.label}
               </Button>
-            )}
-            {import.meta.env.VITE_SCHEDULING_LINK_2 && (
-              <Button
-                onClick={() => {
-                  const baseUrl = import.meta.env.VITE_SCHEDULING_LINK_2;
-                  if (baseUrl) {
-                    // Check if baseUrl is defined
-                    const url = buildSchedulingUrl(baseUrl);
-                    window.open(url, "_blank");
-                  }
-                }}
-                size="2"
-                color="orange"
-              >
-                <CalendarIcon className="w-4 h-4" />
-                日程調整 2
-              </Button>
-            )}
-            {import.meta.env.VITE_SCHEDULING_LINK_3 && (
-              <Button
-                onClick={() => {
-                  const baseUrl = import.meta.env.VITE_SCHEDULING_LINK_3;
-                  if (baseUrl) {
-                    // Check if baseUrl is defined
-                    const url = buildSchedulingUrl(baseUrl);
-                    window.open(url, "_blank");
-                  }
-                }}
-                size="2"
-                color="orange"
-              >
-                <CalendarIcon className="w-4 h-4" />
-                日程調整 3
-              </Button>
-            )}
+            ))}
 
-            {/* Combined Research Button (department のチェックを削除) */}
+            {/* Combined Research Button */}
             {editingData.company && fullName && (
               <Button
                 onClick={onResearch}
@@ -508,8 +472,8 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
             <Heading size="4" mb="3" color="purple">
               リサーチ結果
             </Heading>
-            <Box>
-              <div className="m-2">
+            <Box style={{ overflowX: "auto" }}>
+              <div style={{ paddingLeft: "1.5em", fontSize: "0.875rem" }}>
                 <ReactMarkdown>
                   {researchResult.data.summary || ""}
                 </ReactMarkdown>
