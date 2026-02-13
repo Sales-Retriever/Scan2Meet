@@ -7,8 +7,7 @@ import CameraComponent from "./components/Camera"; // Camera を CameraComponent
 import BusinessCardInfo, {
   BusinessCardData,
 } from "./components/BusinessCardInfo";
-import { analyzeBusinessCard, researchAll } from "./services/gemini"; // researchAllをインポート
-// import { analyzeBusinessCardWithOpenAI } from "./services/openai"; // OpenAI版をコメントアウト
+import { analyzeBusinessCard, researchAll } from "./services/gemini";
 
 function App() {
   // 状態管理
@@ -120,28 +119,27 @@ function App() {
 
   return (
     <Container>
-      <Flex direction="column" style={{ minHeight: "100vh" }}>
+      <Flex direction="column" style={{ minHeight: "100vh", backgroundColor: "#f7f7f7" }}>
         <Box
-          py="2"
           style={{
-            backgroundColor: "var(--iris-9)",
-            color: "white",
+            backgroundColor: "#f7f7f7",
             textAlign: "center",
           }}
         >
-          <Heading size="3" mb="1">
-            Scan2Meet
-          </Heading>
+          <Flex align="center" justify="center" gap="2">
+            <img src="/logo.png" alt="Scan2Meet" style={{ height: "32px" }} />
+            <Heading size="5">Scan2Meet</Heading>
+          </Flex>
         </Box>
 
         <Flex
           direction="column"
           align="center"
           gap="1"
-          py="2"
+          py="1"
           px="4"
           height="100%"
-          style={{ flex: 1 }}
+          style={{ flex: 1, overflowY: "auto" }}
           justify="end"
         >
           <CameraComponent

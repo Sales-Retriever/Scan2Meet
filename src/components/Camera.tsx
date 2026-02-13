@@ -2,7 +2,15 @@ import React, { useRef, useState, useCallback } from "react";
 // react-webcam の代わりに react-camera-pro をインポート
 import { Camera as ReactCameraPro } from "react-camera-pro";
 import { Box, Flex, Button } from "@radix-ui/themes";
-import { CameraIcon, ImageIcon, Loader, RefreshCwIcon } from "lucide-react";
+import {
+  CameraIcon,
+  ImageIcon,
+  Loader,
+  RefreshCwIcon,
+  SettingsIcon,
+} from "lucide-react";
+import SchedulingLinkSettings from "./SchedulingLinkSettings";
+import { useSchedulingLinks } from "../hooks/useSchedulingLinks";
 
 // Base64文字列をFileオブジェクトに変換するヘルパー関数 (変更なし)
 function dataURLtoFile(dataurl: string, filename: string): File | null {
@@ -39,6 +47,9 @@ const CameraComponent: React.FC<CameraProps> = ({
   onReset,
   isLoading = false,
 }) => {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { links } = useSchedulingLinks();
+  const hasNoLinks = links.length === 0;
   // react-camera-pro 用の ref を作成し、型を CameraMethods に指定
   const cameraRef = useRef<CameraMethods>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -127,7 +138,7 @@ const CameraComponent: React.FC<CameraProps> = ({
                 }}
               />
             </div>
-            {/* カメラ画面に撮影ボタンをオーバーレイ */}
+            {/* 撮影ボタン（中央下） */}
             <Flex
               style={{
                 position: "absolute",
@@ -150,31 +161,63 @@ const CameraComponent: React.FC<CameraProps> = ({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  position: "relative",
                 }}
               >
                 <CameraIcon size={24} />
               </Button>
             </Flex>
-          </Box>
-          <Flex gap="4" mt="" justify="center" width="100%">
-            <Button
-              onClick={triggerFileUpload}
-              size="3"
-              color="iris"
-              variant="outline"
-              disabled={isLoading}
-              style={{ width: "100%" }}
+            {/* アップロード・設定ボタン（右上縦並び） */}
+            <Flex
+              direction="column"
+              gap="2"
+              style={{
+                position: "absolute",
+                top: "12px",
+                right: "12px",
+              }}
             >
-              {isLoading ? (
-                "処理中..."
-              ) : (
-                <>
-                  <ImageIcon />
-                  画像をアップロード
-                </>
-              )}
-            </Button>
+              <Button
+                onClick={triggerFileUpload}
+                size="3"
+                color="iris"
+                disabled={isLoading}
+                style={{
+                  borderRadius: "50%",
+                  width: "44px",
+                  height: "44px",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "rgba(255, 255, 255, 0.85)",
+                  backdropFilter: "blur(4px)",
+                  color: "var(--iris-9)",
+                }}
+              >
+                <ImageIcon size={18} />
+              </Button>
+              <Button
+                onClick={() => setSettingsOpen(true)}
+                size="3"
+                color="iris"
+                style={{
+                  borderRadius: "50%",
+                  width: "44px",
+                  height: "44px",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: hasNoLinks
+                    ? "var(--iris-9)"
+                    : "rgba(255, 255, 255, 0.85)",
+                  backdropFilter: "blur(4px)",
+                  color: hasNoLinks ? "white" : "var(--iris-9)",
+                }}
+              >
+                <SettingsIcon size={18} />
+              </Button>
+            </Flex>
             <input
               type="file"
               ref={fileInputRef}
@@ -182,7 +225,11 @@ const CameraComponent: React.FC<CameraProps> = ({
               accept="image/*"
               style={{ display: "none" }}
             />
-          </Flex>
+          </Box>
+          <SchedulingLinkSettings
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+          />
         </Flex>
       ) : (
         <>

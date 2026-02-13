@@ -1,25 +1,67 @@
 import {
-  GoogleGenAI,
-  createUserContent,
-  createPartFromUri, // 追加
-} from "@google/genai";
+  createGoogleGenerativeAI,
+  type GoogleGenerativeAIProviderMetadata,
+  type GoogleGenerativeAIProviderOptions,
+} from "@ai-sdk/google";
+import { generateText } from "ai";
 
-// APIキーを環境変数から取得
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+// APIキーを環境変数から取得してプロバイダを初期化
+const google = createGoogleGenerativeAI({
+  apiKey: import.meta.env.VITE_GEMINI_API_KEY,
+});
 
-// Gemini APIクライアントの初期化
-const ai = new GoogleGenAI({ apiKey });
+// モデルの初期化
+const model = google("gemini-3-flash-preview");
 
-// 会社名と人物名でリサーチする関数 (personName パラメータを追加)
+// Thinking を最小限に設定
+const providerOptions = {
+  google: {
+    thinkingConfig: {
+      thinkingLevel: "minimal",
+    },
+  } satisfies GoogleGenerativeAIProviderOptions,
+};
+
+// File を base64 文字列に変換するヘルパー
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // data:image/png;base64,... から base64 部分を抽出
+      resolve(result.split(",")[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+// グラウンディングメタデータからソースを取得するヘルパー
+const extractSources = (
+  providerMetadata: Record<string, Record<string, unknown>> | undefined
+): string | null => {
+  const metadata = providerMetadata?.google as
+    | GoogleGenerativeAIProviderMetadata
+    | undefined;
+  return (
+    (
+      metadata?.groundingMetadata as {
+        searchEntryPoint?: { renderedContent?: string };
+      }
+    )?.searchEntryPoint?.renderedContent || null
+  );
+};
+
+// 会社名と人物名でリサーチする関数
 export const researchCompany = async (
   companyName: string,
   personName: string
 ) => {
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: [
-        `${companyName} およびその会社に所属する ${personName} について、公開されている情報を元に以下の点を調査して日本語で要約してください：
+    const { text, providerMetadata } = await generateText({
+      model,
+      providerOptions,
+      tools: { google_search: google.tools.googleSearch({}) },
+      prompt: `${companyName} およびその会社に所属する ${personName} について、公開されている情報を元に以下の点を調査して日本語で要約してください：
         【会社について】
         1. 会社概要（設立年、本社所在地、従業員数など）
         2. 主な事業内容
@@ -29,19 +71,13 @@ export const researchCompany = async (
         1. ${personName} の役職や経歴（もしあれば）
         2. ${personName} に関連する最近のニュースや活動（もしあれば）
         4. 最近のニュースや動向
-        
+
         簡潔にまとめてください。`,
-      ],
-      config: {
-        tools: [{ googleSearch: {} }],
-      },
     });
 
     return {
-      summary: response.text,
-      sources:
-        response.candidates?.[0]?.groundingMetadata?.searchEntryPoint
-          ?.renderedContent || null,
+      summary: text,
+      sources: extractSources(providerMetadata),
     };
   } catch (error) {
     console.error("会社リサーチエラー:", error);
@@ -55,26 +91,21 @@ export const researchDepartment = async (
   departmentName: string
 ) => {
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: [
-        `${companyName} の ${departmentName} について以下の情報を調査して日本語で要約してください：
+    const { text, providerMetadata } = await generateText({
+      model,
+      providerOptions,
+      tools: { google_search: google.tools.googleSearch({}) },
+      prompt: `${companyName} の ${departmentName} について以下の情報を調査して日本語で要約してください：
         1. 部署の主な役割や担当業務
         2. 部署の組織構造やチーム構成（もし情報があれば）
         3. 部署に関連する最近のニュースや取り組み
-        
+
         簡潔にまとめてください。`,
-      ],
-      config: {
-        tools: [{ googleSearch: {} }],
-      },
     });
 
     return {
-      summary: response.text,
-      sources:
-        response.candidates?.[0]?.groundingMetadata?.searchEntryPoint
-          ?.renderedContent || null,
+      summary: text,
+      sources: extractSources(providerMetadata),
     };
   } catch (error) {
     console.error("部署リサーチエラー:", error);
@@ -86,7 +117,7 @@ export const researchDepartment = async (
 export const researchAll = async (
   companyName: string,
   personName: string,
-  departmentName: string | null | undefined // departmentName をオプショナルに変更
+  departmentName: string | null | undefined
 ) => {
   try {
     // プロンプトを動的に構築
@@ -110,22 +141,19 @@ export const researchAll = async (
     }
 
     prompt += `
-        
+
         簡潔にまとめてください。`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite-preview-06-17",
-      contents: [prompt], // 動的に生成したプロンプトを使用
-      config: {
-        tools: [{ googleSearch: {} }],
-      },
+    const { text, providerMetadata } = await generateText({
+      model,
+      providerOptions,
+      tools: { google_search: google.tools.googleSearch({}) },
+      prompt,
     });
 
     return {
-      summary: response.text,
-      sources:
-        response.candidates?.[0]?.groundingMetadata?.searchEntryPoint
-          ?.renderedContent || null,
+      summary: text,
+      sources: extractSources(providerMetadata),
     };
   } catch (error) {
     console.error("まとめてリサーチエラー:", error);
@@ -133,32 +161,19 @@ export const researchAll = async (
   }
 };
 
-// 名刺画像を解析する関数 (ai.files.upload を使用)
+// 名刺画像を解析する関数
 export const analyzeBusinessCard = async (imageFile: File) => {
   try {
-    // 1. 画像ファイルをアップロード
     console.log(
-      "Uploading business card image...",
+      "Analyzing business card image...",
       imageFile.name,
       imageFile.type
     );
-    const uploadedFile = await ai.files.upload({
-      file: imageFile,
-    });
-    console.log("Business card image uploaded:", uploadedFile);
 
-    // uploadedFile とそのプロパティの存在を確認
-    if (!uploadedFile?.uri || !uploadedFile?.mimeType) {
-      throw new Error(
-        `Business card image upload failed. Response: ${JSON.stringify(
-          uploadedFile
-        )}`
-      );
-    }
+    // 画像を base64 に変換
+    const base64Data = await fileToBase64(imageFile);
 
-    // 2. プロンプトを定義
-    const prompt = `
-      この画像は名刺です。名刺から以下の情報を抽出してJSON形式で返してください:
+    const prompt = `この画像は名刺です。名刺から以下の情報を抽出してJSON形式で返してください:
       - 姓（lastName）
       - 名（firstName）
       - 役職（position）
@@ -168,27 +183,25 @@ export const analyzeBusinessCard = async (imageFile: File) => {
       - メールアドレス（email）
       - 住所（address）
       - ウェブサイト（website）
-      
+
       JSONのみを返してください。情報が見つからない場合は、対応するフィールドを空文字列にしてください。
       名前は必ず姓（lastName）と名（firstName）に分けてください。日本語の名前の場合、「山田」が姓で「太郎」が名です。
       部署名（department）は、「営業部」「技術部」「マーケティング部」などの部署を指します。
-      電話番号（phone）は、ハイフンを含めても含まなくても構いません。抽出できた形式で返してください。 // 電話番号に関する補足を追加
-    `;
+      電話番号（phone）は、ハイフンを含めても含まなくても構いません。抽出できた形式で返してください。`;
 
-    // 3. アップロードされた画像のURIを使用してコンテンツ生成
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite-preview-06-17",
-      contents: [
-        createUserContent([
-          prompt,
-          // アップロードされた画像のURIを使用
-          createPartFromUri(uploadedFile.uri, uploadedFile.mimeType),
-        ]),
+    const { text } = await generateText({
+      model,
+      providerOptions,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "image", image: base64Data },
+          ],
+        },
       ],
     });
-
-    // 4. レスポンスからJSONを抽出して解析
-    const text = response.text;
 
     // JSONを抽出して解析
     const jsonMatch = text?.match(/\{[\s\S]*\}/);
