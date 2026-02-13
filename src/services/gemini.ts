@@ -161,6 +161,36 @@ export const researchAll = async (
   }
 };
 
+// 画像からURLを抽出する関数
+export const extractUrlFromImage = async (imageFile: File): Promise<string> => {
+  try {
+    const base64Data = await fileToBase64(imageFile);
+
+    const { text } = await generateText({
+      model,
+      providerOptions,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `この画像に含まれるURLを1つ抽出してください。QRコード、テキスト、スクリーンショットなど、どのような形式でも構いません。URLのみを返してください。余計な説明は不要です。URLが見つからない場合は空文字を返してください。`,
+            },
+            { type: "image", image: base64Data },
+          ],
+        },
+      ],
+    });
+
+    const urlMatch = text?.match(/https?:\/\/[^\s"'<>]+/);
+    return urlMatch ? urlMatch[0] : "";
+  } catch (error) {
+    console.error("URL抽出エラー:", error);
+    throw error;
+  }
+};
+
 // 名刺画像を解析する関数
 export const analyzeBusinessCard = async (imageFile: File) => {
   try {
