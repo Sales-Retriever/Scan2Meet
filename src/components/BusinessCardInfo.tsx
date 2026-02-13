@@ -20,6 +20,7 @@ import {
   SparklesIcon,
   Edit2Icon,
   CheckIcon,
+  Loader,
 } from "lucide-react";
 import { useSchedulingLinks } from "../hooks/useSchedulingLinks";
 
@@ -437,7 +438,11 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
                 disabled={researchResult.isLoading}
                 size="2"
               >
-                <SparklesIcon className="w-4 h-4" />
+                {researchResult.isLoading ? (
+                  <Loader size={16} className="animate-spin" />
+                ) : (
+                  <SparklesIcon className="w-4 h-4" />
+                )}
                 {researchResult.isLoading ? "リサーチ中..." : "AIリサーチ"}
               </Button>
             )}
@@ -449,9 +454,12 @@ const BusinessCardInfo: React.FC<BusinessCardInfoProps> = ({
       {researchResult.isLoading && (
         <Box width="100%" maxWidth="500px" mx="auto" my="3">
           <Card size="2">
-            <Text size="2" color="blue" align="center">
-              情報をリサーチ中...
-            </Text>
+            <Flex align="center" justify="center" gap="2">
+              <Loader size={16} className="animate-spin" />
+              <Text size="2" color="blue">
+                情報をリサーチ中...
+              </Text>
+            </Flex>
           </Card>
         </Box>
       )}

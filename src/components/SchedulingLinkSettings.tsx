@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Box,
   Flex,
@@ -17,11 +17,14 @@ import {
   CheckIcon,
   XIcon,
   MoreVerticalIcon,
+  CameraIcon,
+  Loader,
 } from "lucide-react";
 import {
   useSchedulingLinks,
   type SchedulingLink,
 } from "../hooks/useSchedulingLinks";
+import { extractUrlFromImage } from "../services/gemini";
 
 interface SchedulingLinkSettingsProps {
   open: boolean;
@@ -197,35 +200,85 @@ const LinkForm: React.FC<{
   onUrlChange: (v: string) => void;
   onSave: () => void;
   onCancel: () => void;
-}> = ({ label, url, onLabelChange, onUrlChange, onSave, onCancel }) => (
-  <Flex direction="column" gap="3">
-    <TextField.Root
-      size="3"
-      placeholder="表示名（例: 30分ミーティング）"
-      value={label}
-      onChange={(e) => onLabelChange(e.target.value)}
-    />
-    <TextField.Root
-      size="3"
-      placeholder="URL（https://...）"
-      value={url}
-      onChange={(e) => onUrlChange(e.target.value)}
-    />
-    <Flex gap="3" justify="end">
-      <IconButton size="3" variant="soft" color="gray" onClick={onCancel}>
-        <XIcon size={18} />
-      </IconButton>
-      <IconButton
+}> = ({ label, url, onLabelChange, onUrlChange, onSave, onCancel }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+
+  const handleCameraCapture = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setIsExtracting(true);
+    try {
+      const extractedUrl = await extractUrlFromImage(file);
+      if (extractedUrl) {
+        onUrlChange(extractedUrl);
+      }
+    } catch (error) {
+      console.error("URL抽出に失敗しました:", error);
+    } finally {
+      setIsExtracting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  return (
+    <Flex direction="column" gap="3">
+      <TextField.Root
         size="3"
-        variant="soft"
-        color="green"
-        onClick={onSave}
-        disabled={!url.trim()}
-      >
-        <CheckIcon size={18} />
-      </IconButton>
+        placeholder="表示名（例: 30分ミーティング）"
+        value={label}
+        onChange={(e) => onLabelChange(e.target.value)}
+      />
+      <Flex gap="2" align="center">
+        <Box style={{ flex: 1 }}>
+          <TextField.Root
+            size="3"
+            placeholder="URL（https://...）"
+            value={url}
+            onChange={(e) => onUrlChange(e.target.value)}
+            disabled={isExtracting}
+          />
+        </Box>
+        <IconButton
+          size="3"
+          variant="soft"
+          color="iris"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isExtracting}
+        >
+          {isExtracting ? (
+            <Loader size={18} className="animate-spin" />
+          ) : (
+            <CameraIcon size={18} />
+          )}
+        </IconButton>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleCameraCapture}
+          accept="image/*"
+          capture="environment"
+          style={{ display: "none" }}
+        />
+      </Flex>
+      <Flex gap="3" justify="end">
+        <IconButton size="3" variant="soft" color="gray" onClick={onCancel}>
+          <XIcon size={18} />
+        </IconButton>
+        <IconButton
+          size="3"
+          variant="soft"
+          color="green"
+          onClick={onSave}
+          disabled={!url.trim() || isExtracting}
+        >
+          <CheckIcon size={18} />
+        </IconButton>
+      </Flex>
     </Flex>
-  </Flex>
-);
+  );
+};
 
 export default SchedulingLinkSettings;
