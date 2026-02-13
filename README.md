@@ -26,7 +26,7 @@ https://scan-2-meet.com/
 
 1. **リポジトリをクローン:**
    ```bash
-   git clone <repository-url>
+   git clone git@github.com:Sales-Retriever/Scan2Meet.git
    cd Scan2Meet
    ```
 
