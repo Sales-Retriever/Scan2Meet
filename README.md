@@ -1,7 +1,10 @@
 # Scan2Meet
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 名刺をスキャンして情報を抽出し、その場でつながるための Web アプリケーションです。デバイスのカメラや画像ファイルから名刺を読み取り、Gemini API（AI SDK 経由）を利用して情報を解析・表示します。
 https://scan-2-meet.com/
+
 ## 機能
 
 - **名刺スキャン:** デバイスのカメラまたは画像ファイルから名刺を読み込みます。
@@ -19,6 +22,7 @@ https://scan-2-meet.com/
 - **UI ライブラリ:** Radix UI Themes
 - **カメラ:** react-camera-pro
 - **AI:** Vercel AI SDK (`ai` + `@ai-sdk/google`) / Gemini 3 Flash Preview
+- **アナリティクス:** PostHog
 - **アイコン:** Lucide React
 - **パッケージマネージャ:** pnpm
 
@@ -26,7 +30,7 @@ https://scan-2-meet.com/
 
 1. **リポジトリをクローン:**
    ```bash
-   git clone git@github.com:Sales-Retriever/Scan2Meet.git
+   git clone https://github.com/Sales-Retriever/Scan2Meet.git
    cd Scan2Meet
    ```
 
@@ -37,12 +41,13 @@ https://scan-2-meet.com/
 
 3. **環境変数を設定:**
 
-   プロジェクトルートに `.env` ファイルを作成し、API キーを設定します。
+   `.env.example` を `.env` にコピーし、API キーを設定します。
 
-   ```dotenv
-   # Google Gemini API Key（必須）
-   VITE_GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+   ```bash
+   cp .env.example .env
    ```
+
+   詳細は「環境変数」セクションを参照してください。
 
 4. **開発サーバーを起動:**
    ```bash
@@ -56,6 +61,8 @@ https://scan-2-meet.com/
 | 変数名 | 必須 | デフォルト | 説明 |
 |---|---|---|---|
 | `VITE_GEMINI_API_KEY` | はい | — | Google Gemini API キー。[Google AI Studio](https://aistudio.google.com/app/apikey) から取得できます。 |
+| `VITE_PUBLIC_POSTHOG_KEY` | いいえ | — | PostHog プロジェクトの API キー |
+| `VITE_PUBLIC_POSTHOG_HOST` | いいえ | — | PostHog ホスト URL（例: `https://us.i.posthog.com`） |
 | `VITE_QUERY_PARAM_LAST_NAME` | いいえ | `lastName` | 日程調整リンクに渡す「姓」のクエリパラメータ名 |
 | `VITE_QUERY_PARAM_FIRST_NAME` | いいえ | `firstName` | 日程調整リンクに渡す「名」のクエリパラメータ名 |
 | `VITE_QUERY_PARAM_FULL_NAME` | いいえ | `fullName` | 日程調整リンクに渡す「氏名」のクエリパラメータ名 |
@@ -75,7 +82,7 @@ https://scan-2-meet.com/
    - **日程調整リンク:** 登録済みの日程調整リンクを開きます。名刺情報がクエリパラメータとして自動付与されます。
    - **AI リサーチ:** 相手の会社・部署に関する情報を AI がリサーチします。
    - **Facebook / Google 検索:** 名前や会社名で検索します。
-7. 「リセット」ボタンを押すと、新しい名刺をスキャンできる状態に戻ります。
+7. 「別の名刺を撮影」ボタンを押すと、新しい名刺をスキャンできる状態に戻ります。
 
 ## ビルド
 
@@ -84,3 +91,11 @@ pnpm build
 ```
 
 ビルド成果物は `dist/` ディレクトリに出力されます。
+
+## コントリビュート
+
+コントリビュートを歓迎します！詳しくは [CONTRIBUTING.md](CONTRIBUTING.md) をご覧ください。
+
+## ライセンス
+
+[MIT License](LICENSE) の下で公開されています。

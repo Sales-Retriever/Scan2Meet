@@ -1,8 +1,23 @@
 {
   "name": "scan2meet",
-  "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "license": "MIT",
+  "description": "名刺をスキャンしてAIで情報を抽出・リサーチするWebアプリ",
+  "author": "Sales Retriever",
+  "homepage": "https://scan-2-meet.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sales-Retriever/Scan2Meet.git"
+  },
+  "keywords": [
+    "business-card",
+    "ocr",
+    "gemini-ai",
+    "react",
+    "typescript",
+    "pwa"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
