@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.29",
+    "@posthog/react": "^1.7.1",
     "@radix-ui/themes": "^3.2.1",
     "@types/styled-components": "^5.1.34",
     "ai": "^6.0.85",
     "lucide-react": "^0.488.0",
+    "posthog-js": "^1.347.2",
     "react": "^19.0.0",
     "react-camera-pro": "^1.4.0",
     "react-dom": "^19.0.0",

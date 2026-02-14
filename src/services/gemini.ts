@@ -51,68 +51,6 @@ const extractSources = (
   );
 };
 
-// 会社名と人物名でリサーチする関数
-export const researchCompany = async (
-  companyName: string,
-  personName: string
-) => {
-  try {
-    const { text, providerMetadata } = await generateText({
-      model,
-      providerOptions,
-      tools: { google_search: google.tools.googleSearch({}) },
-      prompt: `${companyName} およびその会社に所属する ${personName} について、公開されている情報を元に以下の点を調査して日本語で要約してください：
-        【会社について】
-        1. 会社概要（設立年、本社所在地、従業員数など）
-        2. 主な事業内容
-        3. 業界での位置づけ
-        4. 最近のニュースや動向
-        【人物について】（公開情報がない場合は「不明」と記載）
-        1. ${personName} の役職や経歴（もしあれば）
-        2. ${personName} に関連する最近のニュースや活動（もしあれば）
-        4. 最近のニュースや動向
-
-        簡潔にまとめてください。`,
-    });
-
-    return {
-      summary: text,
-      sources: extractSources(providerMetadata),
-    };
-  } catch (error) {
-    console.error("会社リサーチエラー:", error);
-    throw error;
-  }
-};
-
-// 会社名と部署名でリサーチする関数
-export const researchDepartment = async (
-  companyName: string,
-  departmentName: string
-) => {
-  try {
-    const { text, providerMetadata } = await generateText({
-      model,
-      providerOptions,
-      tools: { google_search: google.tools.googleSearch({}) },
-      prompt: `${companyName} の ${departmentName} について以下の情報を調査して日本語で要約してください：
-        1. 部署の主な役割や担当業務
-        2. 部署の組織構造やチーム構成（もし情報があれば）
-        3. 部署に関連する最近のニュースや取り組み
-
-        簡潔にまとめてください。`,
-    });
-
-    return {
-      summary: text,
-      sources: extractSources(providerMetadata),
-    };
-  } catch (error) {
-    console.error("部署リサーチエラー:", error);
-    throw error;
-  }
-};
-
 // 会社、人物、部署をまとめてリサーチする関数
 export const researchAll = async (
   companyName: string,
